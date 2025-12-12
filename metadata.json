@@ -1,0 +1,5 @@
+{
+  "name": "AutoBIP Studio",
+  "description": "A midnight-themed automated content creation workspace for builders. Connects to engineering tools to generate LinkedIn posts using Gemini AI.",
+  "requestFramePermissions": []
+}
