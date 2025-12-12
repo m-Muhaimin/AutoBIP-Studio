@@ -28,27 +28,65 @@ export const generateDraftFromActivity = async (
   if (strategy === ContentStrategy.BUILD_IN_PUBLIC) {
     strategyPrompt = `
       MODE: BUILD IN PUBLIC (Journey & Engagement Focus)
-      - **Objective**: Create a raw, authentic "Building in Public" narrative. This is NOT a press release or a feature announcement.
-      - **Core Philosophy**: Share the "messy middle" of building. The audience values the struggle and the lesson more than the success.
-      - **Tone**: Highly conversational, vulnerable, and reflective. Use first-person ("I", "We"). Avoid all corporate jargon and marketing speak.
+      - **Objective**: Create a raw, authentic "Building in Public" narrative. Focus on the journey, lessons learned, and community engagement, distinct from a standard feature announcement.
+      - **Core Philosophy**: Share the "messy middle" of building. The audience values the struggle and the lesson more than the success. Prioritize storytelling and vulnerability.
       - **Mandatory Content Elements**:
-        1. **The Struggle**: You MUST describe a specific challenge, mistake, false start, or moment of doubt encountered during this work. Do not gloss over the hard parts.
-        2. **The Pivot/Insight**: How did you overcome it? What was the "aha" moment?
-        3. **The Takeaway**: A universal lesson for other builders.
+        1. **The Why**: Briefly explain the context. Why were you working on this?
+        2. **The Struggle**: You MUST describe a specific challenge, mistake, false start, or moment of doubt encountered. Do not gloss over the hard parts.
+        3. **The Lesson**: What did you learn? What is the universal takeaway for other builders?
       - **Engagement**: The post MUST end with a specific, open-ended question designed to spark a debate or sharing of war stories (e.g., "Have you ever dealt with X?", "How do you handle Y?").
-      - **Structure**: Hook (Problem/Insight) -> The Struggle (The "Bad") -> The Solution (The "Good") -> The Lesson -> Community Question.
+      - **Structure**: Hook (The Struggle/Insight) -> The Narrative (The "Bad" & The "Good") -> The Lesson -> Community Question.
     `;
   } else {
     strategyPrompt = `
       MODE: STANDARD UPDATE (Feature & Value Focus)
       - **Core Philosophy**: Announce a new capability and its immediate value to the user.
-      - **Tone**: Professional, energetic, and confident.
       - **Content Requirements**: 
         - Clearly state what is new.
         - Explain the benefit (time saved, money made, frustration avoided).
         - Include a Call to Action (Try it out, Link in comments).
       - **Structure**: Announcement -> The Problem Solved -> The Solution -> Call to Action.
     `;
+  }
+
+  let tonePrompt = "";
+  switch (tone) {
+    case PostTone.CONTRARIAN:
+      tonePrompt = `
+        STYLE: CONTRARIAN / PROVOCATIVE
+        - Challenge common industry wisdom or "best practices".
+        - Be bold, opinionated, and slightly polarizing.
+        - Use short, punchy sentences.
+        - Start with a statement that makes people stop scrolling (e.g., "Stop doing X", "Why everyone is wrong about Y").
+      `;
+      break;
+    case PostTone.DATA_FOCUSED:
+      tonePrompt = `
+        STYLE: DATA-FOCUSED / ANALYTICAL
+        - Focus on metrics, efficiency, and quantifiable results.
+        - Use numbers, percentages, and logic.
+        - Avoid fluff and emotional storytelling; stick to the facts and the impact.
+        - Tone should be objective, sharp, and expert.
+      `;
+      break;
+    case PostTone.HUMBLE_BUILDER:
+      tonePrompt = `
+        STYLE: HUMBLE BUILDER
+        - Tone: Highly conversational, vulnerable, and reflective. Use first-person ("I", "We"). 
+        - Avoid all corporate jargon and marketing speak.
+        - Emphasize learning and growth over expertise.
+        - Use lowercase for emphasis if it fits the "indie hacker" vibe.
+      `;
+      break;
+    case PostTone.PROFESSIONAL:
+    default:
+      tonePrompt = `
+        STYLE: PROFESSIONAL / CORPORATE
+        - Tone: Confident, energetic, and polished.
+        - Suitable for a company page or a formal personal brand.
+        - Clear, grammatically perfect, and value-oriented.
+      `;
+      break;
   }
 
   const prompt = `
@@ -58,8 +96,9 @@ export const generateDraftFromActivity = async (
     Activities:
     ${activityText}
     
-    Tone: ${tone}
     ${strategyPrompt}
+    
+    ${tonePrompt}
     
     Requirements:
     - ${isBatch ? 'This is a summary/update post combining multiple items.' : 'Focus deeply on this single achievement.'}

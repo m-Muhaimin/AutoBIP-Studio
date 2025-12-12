@@ -5,7 +5,9 @@ import { ImportWizard } from './components/ImportWizard';
 import { ActivityLog } from './components/ActivityLog';
 import { NotificationToast } from './components/NotificationToast';
 import { Analytics } from './components/Analytics';
-import { Tab, Draft, PostTone, Activity, ContentStrategy, Notification } from './types';
+import { AuthScreen } from './components/AuthScreen';
+import { OnboardingWizard } from './components/OnboardingWizard';
+import { Tab, Draft, PostTone, Activity, ContentStrategy, Notification, OnboardingData } from './types';
 import { generateDraftFromActivity, findTrendsAndGenerateDraft, detectIndustryTrends } from './services/geminiService';
 import { Search, Github, Trello, CreditCard, Rss, Loader2, FileText, Calendar, CheckCircle } from 'lucide-react';
 
@@ -57,6 +59,10 @@ const IntegrationsView: React.FC = () => (
 );
 
 const App: React.FC = () => {
+  // Auth & Onboarding State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+
   const [activeTab, setActiveTab] = useState<Tab>(Tab.LOGS);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -75,6 +81,8 @@ const App: React.FC = () => {
 
   // Effect to simulate background trend detection
   useEffect(() => {
+    if (!isAuthenticated || !onboardingComplete) return;
+
     const timer = setTimeout(async () => {
         // Simulate a delay for "detection"
         const trends = await detectIndustryTrends("SaaS & Developer Tools");
@@ -83,7 +91,7 @@ const App: React.FC = () => {
         }
     }, 5000); // Check 5 seconds after mount
     return () => clearTimeout(timer);
-  }, []);
+  }, [isAuthenticated, onboardingComplete]);
 
   const handleImportComplete = () => {
     setIsImportOpen(false);
@@ -100,13 +108,13 @@ const App: React.FC = () => {
     setActivities(prev => prev.map(a => a.id === id ? { ...a, selected: !a.selected } : a));
   };
 
-  const generateDraftFromLogs = async (selectedIds: string[], strategy: ContentStrategy) => {
+  const generateDraftFromLogs = async (selectedIds: string[], strategy: ContentStrategy, tone: PostTone) => {
     setIsGenerating(true);
     const selectedActivities = activities.filter(a => selectedIds.includes(a.id));
     const descriptions = selectedActivities.map(a => a.description);
     
-    // Pass strategy to service
-    const generated = await generateDraftFromActivity(descriptions, PostTone.HUMBLE_BUILDER, strategy);
+    // Pass strategy and tone to service
+    const generated = await generateDraftFromActivity(descriptions, tone, strategy);
 
     const newDraft: Draft = {
         id: Date.now().toString(),
@@ -185,6 +193,23 @@ const App: React.FC = () => {
     return [];
   };
 
+  const handleOnboardingComplete = (data: OnboardingData) => {
+    // In a real app, save this data to user settings
+    console.log("Onboarding completed:", data);
+    setOnboardingComplete(true);
+  };
+
+  // 1. Auth Check
+  if (!isAuthenticated) {
+    return <AuthScreen onLogin={() => setIsAuthenticated(true)} />;
+  }
+
+  // 2. Onboarding Check
+  if (!onboardingComplete) {
+    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+  }
+
+  // 3. Main App Dashboard
   const activeDraft = drafts.find(d => d.id === activeDraftId) || null;
 
   return (
@@ -289,53 +314,4 @@ const App: React.FC = () => {
                                           {draft.sourceIcon === 'linear' && <Trello size={12} className="text-blue-400" />}
                                           <span className={`text-[10px] uppercase font-bold tracking-wider ${activeDraftId === draft.id ? "text-gray-400" : "text-gray-600"}`}>
                                               {draft.source}
-                                          </span>
-                                      </div>
-                                      <span className="text-[10px] text-gray-600">
-                                          {draft.createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                      </span>
-                                  </div>
-                                  <h3 className={`text-sm font-medium line-clamp-1 mb-1 ${activeDraftId === draft.id ? "text-white" : "text-gray-300"}`}>
-                                      {draft.title || "Untitled Draft"}
-                                  </h3>
-                                  <p className={`text-xs line-clamp-2 ${activeDraftId === draft.id ? "text-gray-400" : "text-gray-500"}`}>
-                                      {draft.content[0]?.content || "No content..."}
-                                  </p>
-                                </>
-                              )}
-                          </div>
-                        );
-                      })
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Editor View */}
-            <Editor 
-              draft={activeDraft} 
-              onUpdateDraft={updateDraft}
-              onPublish={publishDraft}
-              isListVisible={isListVisible}
-              onToggleList={() => setIsListVisible(!isListVisible)}
-            />
-          </>
-        )}
-      </div>
-
-      <ImportWizard 
-        isOpen={isImportOpen} 
-        onClose={() => setIsImportOpen(false)}
-        onComplete={handleImportComplete}
-      />
-
-      <NotificationToast 
-        notifications={notifications}
-        onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))}
-        onAction={handleNotificationAction}
-      />
-    </div>
-  );
-};
-
-export default App;
+                               

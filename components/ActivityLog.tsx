@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { Activity, ActivityType, ContentStrategy } from '../types';
-import { GitCommit, Tag, CheckSquare, Square, Wand2, Filter, MoreHorizontal, Sparkles } from 'lucide-react';
+import { Activity, ActivityType, ContentStrategy, PostTone } from '../types';
+import { GitCommit, Tag, CheckSquare, Square, Wand2, Filter, MoreHorizontal, Sparkles, PenTool } from 'lucide-react';
 
 interface ActivityLogProps {
   activities: Activity[];
-  onGenerateDraft: (selectedIds: string[], strategy: ContentStrategy) => void;
+  onGenerateDraft: (selectedIds: string[], strategy: ContentStrategy, tone: PostTone) => void;
   onToggleSelection: (id: string) => void;
 }
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ activities, onGenerateDraft, onToggleSelection }) => {
   const selectedCount = activities.filter(a => a.selected).length;
   const [strategy, setStrategy] = useState<ContentStrategy>(ContentStrategy.BUILD_IN_PUBLIC);
+  const [tone, setTone] = useState<PostTone>(PostTone.HUMBLE_BUILDER);
 
   const TypeBadge = ({ type }: { type: ActivityType }) => {
     let colors = "";
@@ -41,6 +42,22 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ activities, onGenerate
         </div>
         
         <div className="flex items-center gap-3">
+            {/* Tone Selector */}
+            <div className="flex items-center gap-2 bg-[#1A1D23] px-2 py-1.5 rounded-md border border-[#262A33]">
+                <PenTool size={14} className="text-blue-400" />
+                <select 
+                    value={tone}
+                    onChange={(e) => setTone(e.target.value as PostTone)}
+                    className="bg-transparent text-xs text-gray-200 outline-none border-none cursor-pointer pr-2"
+                >
+                    <option value={PostTone.HUMBLE_BUILDER}>Humble Builder</option>
+                    <option value={PostTone.PROFESSIONAL}>Professional</option>
+                    <option value={PostTone.CONTRARIAN}>Contrarian</option>
+                    <option value={PostTone.DATA_FOCUSED}>Data Focused</option>
+                </select>
+            </div>
+
+            {/* Strategy Selector */}
              <div className="flex items-center gap-2 bg-[#1A1D23] px-2 py-1.5 rounded-md border border-[#262A33]">
                 <Sparkles size={14} className="text-purple-400" />
                 <select 
@@ -57,7 +74,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ activities, onGenerate
             
             <button 
                 disabled={selectedCount === 0}
-                onClick={() => onGenerateDraft(activities.filter(a => a.selected).map(a => a.id), strategy)}
+                onClick={() => onGenerateDraft(activities.filter(a => a.selected).map(a => a.id), strategy, tone)}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
                     selectedCount > 0 
                     ? 'bg-[#3B82F6] hover:bg-blue-600 text-white shadow-lg shadow-blue-500/20' 

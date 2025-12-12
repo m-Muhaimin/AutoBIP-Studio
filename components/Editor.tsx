@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MoreHorizontal, Image as ImageIcon, Plus, Trash2, ArrowLeft, Wand2, Send, RotateCcw, FileText, ChevronRight, Sparkles, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { MoreHorizontal, Image as ImageIcon, Plus, Trash2, ArrowLeft, Wand2, Send, RotateCcw, FileText, ChevronRight, Sparkles, PanelLeftClose, PanelLeftOpen, Download } from 'lucide-react';
 import { Draft, ThreadItem, PostTone } from '../types';
 import { enhanceText, generatePostImage } from '../services/geminiService';
 
@@ -14,6 +14,7 @@ interface EditorProps {
 export const Editor: React.FC<EditorProps> = ({ draft, onUpdateDraft, onPublish, isListVisible, onToggleList }) => {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageSize, setImageSize] = useState<"1K" | "2K" | "4K">("1K");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
@@ -71,8 +72,8 @@ export const Editor: React.FC<EditorProps> = ({ draft, onUpdateDraft, onPublish,
   const handleGenerateImage = async () => {
     setIsGeneratingImage(true);
     const mainItem = draft.content[0];
-    const prompt = `A minimal, dark-mode tech visualization: ${mainItem.content.substring(0, 50)}...`;
-    const imageUrl = await generatePostImage(prompt, "2K");
+    const prompt = `A professional, high-quality, minimal tech visualization suitable for a LinkedIn post about: ${mainItem.content.substring(0, 100)}. Use abstract geometric shapes, a dark background, and neon accents.`;
+    const imageUrl = await generatePostImage(prompt, imageSize);
     if (imageUrl) {
         onUpdateDraft({ ...draft, imageUrl });
     }
@@ -124,28 +125,57 @@ export const Editor: React.FC<EditorProps> = ({ draft, onUpdateDraft, onPublish,
                     <ArrowLeft size={20} />
                 </button>
                 {!draft.imageUrl ? (
-                    <button 
-                        onClick={handleGenerateImage}
-                        disabled={isGeneratingImage}
-                        className="flex items-center gap-2 text-gray-500 hover:text-gray-300 transition-colors text-sm px-2 py-1 rounded hover:bg-[#1A1D23]"
-                    >
-                        <ImageIcon size={16} />
-                        {isGeneratingImage ? "Generating..." : "Add a thumbnail"}
-                    </button>
+                     <div className="flex items-center gap-2">
+                        <select 
+                            value={imageSize}
+                            onChange={(e) => setImageSize(e.target.value as "1K" | "2K" | "4K")}
+                            disabled={isGeneratingImage}
+                            className="bg-[#1A1D23] text-xs text-gray-300 border border-[#262A33] rounded px-2 py-1.5 focus:outline-none focus:border-[#3B82F6] cursor-pointer"
+                        >
+                            <option value="1K">1K</option>
+                            <option value="2K">2K</option>
+                            <option value="4K">4K</option>
+                        </select>
+                        <button 
+                            onClick={handleGenerateImage}
+                            disabled={isGeneratingImage}
+                            className={`flex items-center gap-2 text-gray-400 hover:text-gray-200 transition-colors text-sm px-3 py-1.5 rounded bg-[#1A1D23] border border-[#262A33] hover:border-gray-500 ${isGeneratingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {isGeneratingImage ? (
+                                <>
+                                    <Sparkles size={14} className="animate-spin" />
+                                    <span>Generating...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <ImageIcon size={14} />
+                                    <span>Generate Thumbnail</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
                 ) : (
-                    <button 
-                         onClick={() => onUpdateDraft({...draft, imageUrl: undefined})}
-                         className="flex items-center gap-2 text-red-400 hover:text-red-300 transition-colors text-sm px-2 py-1 rounded hover:bg-[#1A1D23]"
-                    >
-                        <Trash2 size={16} /> Remove thumbnail
-                    </button>
+                     <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 bg-[#1A1D23] px-2 py-1 rounded border border-[#262A33]">{imageSize}</span>
+                        <button 
+                             onClick={() => onUpdateDraft({...draft, imageUrl: undefined})}
+                             className="flex items-center gap-2 text-red-400 hover:text-red-300 transition-colors text-sm px-2 py-1 rounded hover:bg-[#1A1D23]"
+                        >
+                            <Trash2 size={16} /> Remove thumbnail
+                        </button>
+                     </div>
                 )}
             </div>
 
             {/* Image Preview */}
             {draft.imageUrl && (
-                <div className="rounded-lg overflow-hidden border border-[#262A33] shadow-lg">
+                <div className="rounded-lg overflow-hidden border border-[#262A33] shadow-lg relative group/image">
                     <img src={draft.imageUrl} alt="Thumbnail" className="w-full h-auto object-cover max-h-[400px]" />
+                     <div className="absolute top-2 right-2 opacity-0 group-hover/image:opacity-100 transition-opacity">
+                         <a href={draft.imageUrl} download="thumbnail.png" className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm block">
+                             <Download size={16} />
+                         </a>
+                    </div>
                 </div>
             )}
 

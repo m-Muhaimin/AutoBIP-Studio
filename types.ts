@@ -1,3 +1,4 @@
+
 export enum Tab {
   LOGS = 'LOGS',
   DRAFTS = 'DRAFTS',
@@ -77,4 +78,10 @@ export interface Notification {
   type: 'trend' | 'gap';
   timestamp: Date;
   actionQuery: string; // The topic to generate a draft about
+}
+
+export interface OnboardingData {
+  hasConnectedGithub: boolean;
+  productAreas: string[];
+  logTypes: string[];
 }
